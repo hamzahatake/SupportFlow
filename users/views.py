@@ -51,20 +51,7 @@ class UserLogInAPIView(GenericAPIView):
 class UserRegistrationCreateAPIView(CreateAPIView):
     permission_classes = [AllowAny]
     serializer_class = UserRegistrationSerializer
-
-    def post(self, request, *args, **kwargs):
-        serializer = self.get_serializer(data=request.data)
-        serializer.is_valid(raise_exception=True)
-
-        email = serializer.validated_data["email"]
-        if email.exists():
-            raise Response("This email is already registered!")
         
-        def create(self, request, *args, **kwargs):
-            user = self.request.user
-            password = self.request.user.password
-            user.set_password(password)
-
 
 class AllOrganizationUsersListApiView(ListAPIView):
     permission_classes = [IsAuthenticated] # Only supervisor can see all the users
