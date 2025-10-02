@@ -1,9 +1,28 @@
 from django.db import models
 from django.conf import settings
 from django.utils.text import slugify
+from .validators import validate_phone_number
 from django.contrib.auth.models import AbstractUser
 
 USER = settings.AUTH_USER_MODEL
+
+
+class Department(models.Model):
+    name = models.CharField(max_length=100, unique=True)
+    description = models.TextField(blank=True, null=True)
+    is_active = models.BooleanField(default=True)
+    created_by = models.ForeignKey(USER, on_delete=models.SET_NULL, null=True, blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        indexes = [
+            models.Index(fields=['name']),
+            models.Index(fields=['is_active']),
+        ]
+
+    def __str__(self):
+        return self.name
 
 
 class Organization(models.Model):
@@ -65,7 +84,7 @@ class User(AbstractUser):
     role = models.CharField(max_length=50, choices=ROLES, default="customer")
     organization = models.ForeignKey(Organization, on_delete=models.SET_NULL, null=True, blank=True)
     
-    phone_number = models.CharField(max_length=20, blank=True, null=True)
+    phone_number = models.CharField(max_length=20, blank=True, null=True, validators=[validate_phone_number])
     timezone = models.CharField(max_length=50, default='UTC')
     is_verified = models.BooleanField(default=False)
     last_activity = models.DateTimeField(null=True, blank=True)
@@ -105,7 +124,7 @@ class Supervisor(models.Model):
     user = models.ForeignKey(User, on_delete=models.CASCADE, related_name="supervisor")
     profile_image = models.ImageField(upload_to="media/supervisor/profile_image", blank=True, null=True)
     
-    department = models.CharField(max_length=100, blank=True, null=True)
+    department = models.ForeignKey(Department, on_delete=models.SET_NULL, null=True, blank=True)
     can_create_agents = models.BooleanField(default=True)
     max_agents = models.PositiveIntegerField(default=20)
     created_at = models.DateTimeField(auto_now_add=True)
@@ -117,11 +136,11 @@ class Agent(models.Model):
     profile_image = models.ImageField(upload_to="media/agent/profile_image", blank=True, null=True)
     created_by = models.ForeignKey(Supervisor, on_delete=models.SET_NULL, null=True, blank=True)
     
-    department = models.CharField(max_length=100, blank=True, null=True)
+    department = models.ForeignKey(Department, on_delete=models.SET_NULL, null=True, blank=True)
     max_tickets = models.PositiveIntegerField(default=50)
     is_available = models.BooleanField(default=True)
-    skills = models.JSONField(default=list, blank=True)  # e.g., ['technical', 'billing']
-    working_hours = models.JSONField(default=dict, blank=True)
+    skills = models.JSONField(default=list, blank=True)  # ['technical', 'billing']
+    working_hours = models.PositiveIntegerField(blank=False, null=False)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 

@@ -6,3 +6,4 @@ channels
 psycopg2-binary  # if using Postgres
 stripe
 celery
+phonenumbers
