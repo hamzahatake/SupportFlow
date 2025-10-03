@@ -10,7 +10,7 @@ from .validators import (
     validate_working_hours,
     validate_department_id,
     validate_department_capacity,
-    validate_department_assignment,
+    validate_department_assignment_field,
     validate_department_name_format
     )
 from django.contrib.auth import authenticate
@@ -22,16 +22,12 @@ class UserSerializer(serializers.ModelSerializer):
     role = serializers.CharField(read_only=True)
     phone_number = serializers.CharField(validators=[validate_phone_number])
     timezone = serializers.CharField(validators=[validate_timezone], required=False)
+    organization = serializers.PrimaryKeyRelatedField(validators=[validate_organization_active])
 
     class Meta:
         model = User
         fields = ["id", "email", "first_name", "last_name", "organization", "phone_number", "timezone",
-                   "is_verified", "last_activity", "notification_preferences"]
-        
-    def validate_organization(self, value):
-        if not value.is_active:
-            raise ValidationError("This organization is not active!")
-        return value       
+                   "is_verified", "last_activity", "notification_preferences"]       
 
 class UserLogInSerializer(serializers.Serializer):
     email = serializers.EmailField()
@@ -60,7 +56,7 @@ class UserRegistrationSerializer(serializers.ModelSerializer):
         fields = ["first_name", "last_name", "email", "password", "confirm_password", "organization"]
 
     def validate(self, attrs): 
-        validate_password_match(attrs) # Using v_p_m logic to see if password and confirm_password match or not
+        validate_password_match(attrs) 
         return attrs
 
     def create(self, validated_data):
@@ -75,6 +71,8 @@ class UserRegistrationSerializer(serializers.ModelSerializer):
 
 
 class OrganizationSerializer(serializers.ModelSerializer):
+    max_user = serializers.IntegerField(read_only=True)
+
     class Meta:
         model = Organization
         fields = ["id", "name", "slug", "plan", "stripe_customer_id", "domain", "settings", 
@@ -106,24 +104,11 @@ class SupervisorSerializer(serializers.ModelSerializer):
         model = Supervisor
         fields = ["id", "user", "profile_image", "department", "department_name", "can_create_agents", "max_agents",
                    "created_at", "updated_at"]
-    
-    def validate(self, attrs):
-        """
-        Object-level validation for supervisor department assignment.
-        Uses validate_department_assignment for permission checking.
-        """
-        # Get the department ID from attrs
-        department_id = attrs.get('department')
-        if department_id:
-            # This will be called with user context from the view
-            # validate_department_assignment(department_id, self.context.get('request').user)
-            pass
-        return attrs
 
 
 class AgentSerializer(serializers.ModelSerializer):
     working_hours = serializers.IntegerField(validators=[validate_working_hours])
-    department = serializers.IntegerField(validators=[validate_department_id, validate_department_capacity])
+    department = serializers.IntegerField(validators=[validate_department_id, validate_department_capacity, validate_department_assignment_field])
     department_name = serializers.CharField(source='department.name', read_only=True)
 
     class Meta:

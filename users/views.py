@@ -1,5 +1,10 @@
 from django.shortcuts import render
-from .serializer import UserLogInSerializer, UserRegistrationSerializer, UserSerailizer, OrganizationSerializer
+from .serializer import (
+    UserLogInSerializer, 
+    UserRegistrationSerializer, 
+    UserSerializer, 
+    OrganizationSerializer
+)
 from .models import User, Organization
 from rest_framework.generics import RetrieveAPIView, ListAPIView, GenericAPIView, CreateAPIView
 from rest_framework.exceptions import ValidationError
@@ -10,10 +15,10 @@ from rest_framework.permissions import IsAuthenticated, AllowAny
 
 class UserProfileRetrieveView(RetrieveAPIView):
     permission_class = [IsAuthenticated]
-    serializer_class = UserSerailizer
+    serializer_class = UserSerializer
 
     def get_queryset(self):
-        return UserSerailizer.objects.filter(user=User)
+        return UserSerializer.objects.filter(user=User)
     
 
 class UserLogInAPIView(GenericAPIView):
