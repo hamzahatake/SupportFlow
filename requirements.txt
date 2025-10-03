@@ -6,4 +6,8 @@ channels
 psycopg2-binary  # if using Postgres
 stripe
 celery
+redis  # for Celery broker
 phonenumbers
+Pillow  # for image handling
+django-filter  # for filtering in DRF
+django-extensions  # useful development tools

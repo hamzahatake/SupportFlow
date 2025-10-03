@@ -1,5 +1,5 @@
 from rest_framework import serializers
-from .validators import (
+from validators import (
     validate_email,
     validate_timezone,
     validate_phone_number,

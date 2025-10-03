@@ -1,7 +1,6 @@
 from zoneinfo import available_timezones
 import phonenumbers
 from django.conf import settings
-from .models import Department, Agent, Organization, User
 from rest_framework.validators import ValidationError
 
 USER = settings.AUTH_USER_MODEL
@@ -111,6 +110,9 @@ def validate_department_id(value):
     if not value:
         raise ValidationError("Department ID is required.")
     
+    from django.apps import apps
+    Department = apps.get_model('users', 'Department')
+    
     try:
         department = Department.objects.get(id=value)
         
@@ -126,6 +128,10 @@ def validate_department_capacity(value):
     if not value:
         raise ValidationError("Department ID is required.")
     
+    from django.apps import apps
+    Department = apps.get_model('users', 'Department')
+    Agent = apps.get_model('users', 'Agent')
+    
     try:
         department = Department.objects.get(id=value)
         if not department.is_active:
@@ -133,7 +139,7 @@ def validate_department_capacity(value):
         
         current_agent_count = Agent.objects.filter(department=department).count()
         max_capacity = 50
-        
+
         if current_agent_count >= max_capacity:
             raise ValidationError(f"Department '{department.name}' (ID: {value}) is at maximum capacity ({current_agent_count}/{max_capacity} agents). Cannot assign more agents to this department.")
         
@@ -146,6 +152,9 @@ def validate_department_capacity(value):
 def validate_department_assignment(value, user=None): # Validates if a user can be assigned to a specific department.
     if not value:
         raise ValidationError("Department ID is required.")
+    
+    from django.apps import apps
+    Department = apps.get_model('users', 'Department')
     
     try:
         department = Department.objects.get(id=value)
@@ -168,6 +177,9 @@ def validate_department_assignment(value, user=None): # Validates if a user can 
 def validate_department_assignment_field(value): # Field validator version without user parameter
     if not value:
         raise ValidationError("Department ID is required.")
+    
+    from django.apps import apps
+    Department = apps.get_model('users', 'Department')
     
     try:
         department = Department.objects.get(id=value)

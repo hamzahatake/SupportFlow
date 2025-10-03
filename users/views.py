@@ -14,11 +14,11 @@ from rest_framework.permissions import IsAuthenticated, AllowAny
 
 
 class UserProfileRetrieveView(RetrieveAPIView):
-    permission_class = [IsAuthenticated]
+    permission_classes = [IsAuthenticated]
     serializer_class = UserSerializer
 
     def get_queryset(self):
-        return UserSerializer.objects.filter(user=User)
+        return User.objects.filter(user=User)
     
 
 class UserLogInAPIView(GenericAPIView):
@@ -29,13 +29,7 @@ class UserLogInAPIView(GenericAPIView):
         serializer = self.get_serializer(data=request.data)
         serializer.is_valid(raise_exception=True)
 
-        email = serializer.validated_data["email"]
-        password = serializer.validated_data["password"]
-
-        user = User.objects.filter(email=email).first()
-
-        if not user or not user.check_password(password):
-            raise ValidationError("Invalid credentials!")
+        user = serializer.validated_data['user']
 
         # JWT tokens
         refresh = RefreshToken.for_user(user)
@@ -53,6 +47,17 @@ class UserLogInAPIView(GenericAPIView):
         })
     
 
+class UserLogOutView(GenericAPIView):
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request, *args, **kwargs):
+        user_refresh_token = request.data['refresh']
+        token = RefreshToken(user_refresh_token)
+        token.blacklist()
+        
+        return (token, f"200 OK, “Logout successful”")
+
+
 class UserRegistrationCreateAPIView(CreateAPIView):
     permission_classes = [AllowAny]
     serializer_class = UserRegistrationSerializer
@@ -62,8 +67,4 @@ class AllOrganizationUsersListApiView(ListAPIView):
     permission_classes = [IsAuthenticated] # Only supervisor can see all the users
     queryset = Organization.objects.all()
     serializer_class = OrganizationSerializer
-
-    def get_queryset(self):
-        organization_users = self.request.user.organization
-        return organization_users
     
