@@ -1,8 +1,9 @@
 from django.shortcuts import render
 from .serializer import UserLogInSerializer, UserRegistrationSerializer, UserSerializer, OrganizationSerializer
-from .models import User, Organization
+from .models import User, Agent, Supervisor
 from rest_framework import status
 from rest_framework.generics import GenericAPIView, RetrieveUpdateAPIView, ListAPIView, CreateAPIView
+from rest_framework.views import APIView
 from django.contrib.auth.tokens import PasswordResetTokenGenerator
 from django.core.validators import validate_email
 from django.contrib.auth.password_validation import validate_password
@@ -18,6 +19,7 @@ from django.utils.http import urlsafe_base64_encode, urlsafe_base64_decode
 from django.utils.encoding import force_bytes, force_str
 from django.core.mail import send_mail
 from rest_framework import status
+from .permissions import CanCreateUser
 
     
 # User Authentication Views
@@ -47,6 +49,15 @@ class UserLogInAPIView(GenericAPIView):
             }
         })
     
+
+class UserRegistrationAPIView(APIView):
+    permission_classes = [AllowAny]
+    serializer_class = UserRegistrationSerializer
+
+    def post(self, request, *args, **kwargs):
+        serializer = self.get_serializer(data=request.data)
+        user = User.object.create(user=request.data, role="customer") if invite_token else self.request.user
+
 
 class UserLogOutView(GenericAPIView):
     permission_classes = [IsAuthenticated]
@@ -207,8 +218,8 @@ class UserListView(ListAPIView):
 
 
 class UserCreateView(CreateAPIView):
-    permission_classes = [IsAuthenticated]
+    permission_classes = [CanCreateUser]
     serializer_class = UserRegistrationSerializer
 
-    def post(self, request, *args, **kwargs):
-        serializer = self.serializer.get()
+    def perform_create(self, serializer):
+        serializer.save(organization=self.request.user.organization)
